@@ -1,6 +1,7 @@
 from typing import List, Annotated
-from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
+from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter, Query
 from pydantic import BaseModel
+from sqlalchemy import func, and_, or_
 from sqlalchemy.orm import Session
 from .. import models, schemas, utils, oauth2
 from ..database import get_db
@@ -12,16 +13,19 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=List[schemas.Post])
-async def get_post(db:Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
-    # cursor.execute("SELECT * FROM post")
-    # posts = cursor.fetchall()
-    posts = db.query(models.Post).filter(models.Post.owner_id == current_user.id).all()
-    return posts
+@router.get("/", response_model=List[schemas.PostOut])
+async def get_post(db:Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user), skip: int = 0, limit: Annotated[int, Query() ]= 10, search: Annotated[str | None, Query()]= None):
+
+    posts = db.query(models.Post).filter( models.Post.title.contains(search)).limit(limit).offset(skip).all()
+    
+
+    results = db.query(models.Post, func.count(models.Vote.post_id).label("votes")).join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True).group_by(models.Post.id).filter( models.Post.title.contains(search)).limit(limit).offset(skip).all()
+
+    return results
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model= schemas.Post)
-def create_posts(post: schemas.PostCreate,   db:Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+def create_posts(post: schemas.PostCreate, db:Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     # cursor.execute("INSERT INTO post(title, content, published) VALUES (%s, %s, %s) RETURNING *",(post.title, post.content, post.published))
     # new_post = cursor.fetchall()
     # conn.commit()

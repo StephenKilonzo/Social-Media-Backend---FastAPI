@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, conint
 from datetime import datetime
 
 
@@ -45,6 +45,14 @@ class Post(PostBase):
         orm_mode = True
 
 
+class PostOut(BaseModel):
+    Post: Post
+    votes: int
+
+    class Config:
+        orm_mode = True
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -53,3 +61,8 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     id: str | None = None
+
+
+class Vote(BaseModel):
+    post_id: int
+    dir: conint(le=1)
