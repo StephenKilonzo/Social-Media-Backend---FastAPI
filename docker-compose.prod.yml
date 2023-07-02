@@ -1,0 +1,33 @@
+# docker-compose.yml
+
+version: '3.8'
+
+services:
+  api:
+    image: #image name
+    depends_on:
+      - postgres
+    ports:
+    - 80:8000
+
+    environment:
+      - DATABASE_HOSTNAME = ${DATABASE_HOSTNAME}
+      - DATABASE_PORT = ${DATABASE_PORT}
+      - DATABASE_PASSWORD = ${DATABASE_PASSWORD}
+      - DATABASE_NAME = ${DATABASE_NAME}
+      - DATABASE_USERNAME = ${DATABASE_USERNAME}
+      - SECRET_KEY = ${SECRET_KEY}
+      - ALGORITHM = ${ALGORITHM}
+      - ACCESS_TOKEN_EXPIRY_MINUTES = ${ACCESS_TOKEN_EXPIRY_MINUTES}
+
+    postgres:
+      image: postgres
+      environment:
+      - DATABASE_PASSWORD = ${DATABASE_PASSWORD}
+      - DATABASE_DB=${DATABASE_DB}
+    
+      volumes:
+      - postgres_db:/var/lib/postgresql/data
+
+    volumes:
+      postgres_db:
